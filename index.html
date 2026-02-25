@@ -397,7 +397,6 @@ input#search:focus {
             <div><label style="font-size:10px">Мод</label><select id="ed-mod"></select></div>
             <div><label style="font-size:10px">Категория</label><select id="ed-cat"></select></div>
         </div>
-        <button onclick="downloadBackup()" class="yellow">📥 Бэкап в файл</button>
         <button onclick="confirmEdit()">СОХРАНИТЬ</button>
         <button onclick="closeModals()" style="background:transparent; color:var(--text-muted)">ЗАКРЫТЬ</button>
     </div>
@@ -458,6 +457,7 @@ input#search:focus {
         <button onclick="delCat()" class="danger" style="padding:4px 8px;">×</button>
     </div>
     <button onclick="saveGlobal()" class="blurple">💾 Сохранить в БД</button>
+     <button onclick="downloadBackup()" class="yellow">📥 Бэкап в файл</button>
 </div>
             </div>
         </div>
@@ -860,5 +860,6 @@ function delCat() {
 </script>
 </body>
 </html>
+
 
 
