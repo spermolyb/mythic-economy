@@ -717,7 +717,25 @@ function confirmEdit() {
 function del(i) { if(confirm('Удалить?')) { db.servers[curSrvIdx].items.splice(i,1); render(); } }
 
 function saveGlobal() {
-    database.ref('shopData').update(db).then(() => alert("Сохранено!"));
+    // Спрашиваем пароль ПРЯМО перед отправкой
+    const pass = prompt("Подтвердите пароль администратора для записи:");
+    if (!pass) return;
+
+    // Создаем копию данных для отправки и добавляем в неё временное поле lastPass
+    // Это поле проверит сервер Firebase и сравнит с тем, что в базе
+    const dataToSend = {
+        ...db,
+        lastPass: pass
+    };
+
+    database.ref('shopData').update(dataToSend)
+        .then(() => {
+            alert("✅ Данные успешно синхронизированы с облаком!");
+        })
+        .catch((err) => {
+            console.error(err);
+            alert("❌ Ошибка доступа! Неверный пароль или взлом отклонен.");
+        });
 }
 
 function createCustomItem() {
@@ -819,3 +837,4 @@ function delCat() {
 </script>
 </body>
 </html>
+
