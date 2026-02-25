@@ -312,6 +312,18 @@ input:focus, select:focus {
 
         .admin-view { display: none !important; }
         body.admin-mode .admin-view { display: flex !important; }
+
+        @keyframes pulse-green {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.7); }
+    50% { transform: scale(1.1); box-shadow: 0 0 15px 5px rgba(46, 204, 113, 0.4); border-color: var(--green); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); }
+}
+
+.added-flash {
+    animation: pulse-green 0.4s ease-out;
+    z-index: 100;
+}
+
     </style>
 </head>
 <body class="player-mode">
@@ -377,132 +389,215 @@ input:focus, select:focus {
             </div>
             <div class="nav-center"><input type="text" id="search" placeholder="Поиск..." oninput="render()"></div>
             <div class="nav-right">
-                <button onclick="toggleAdmin()" id="admBtn" style="background:#4f545c; color: white;">АДМИН: ВЫКЛ</button>
-                <div class="admin-view" style="gap:5px;">
-    <div style="display:flex; gap:2px;">
-        <button onclick="manualAdd('mod')" title="Добавить мод">+</button>
-        <button onclick="manualDelete('mod')" class="danger" title="Удалить мод">−</button>
+    <button onclick="toggleAdmin()" id="admBtn" style="display: none;">АДМИН</button>
+    
+    <div class="admin-view" style="gap:5px;">
+        <div style="display:flex; gap:2px;">
+            <button onclick="manualAdd('mod')" title="Добавить мод">+</button>
+            <button onclick="manualDelete('mod')" class="danger" title="Удалить мод">−</button>
+        </div>
+        <div style="display:flex; gap:2px;">
+            <button onclick="manualAdd('cat')" title="Добавить категорию">+</button>
+            <button onclick="manualDelete('cat')" class="danger" title="Удалить категорию">−</button>
+        </div>
+        <button onclick="saveGlobal()" class="blurple">💾 Сохранить всё</button>
     </div>
-    <div style="display:flex; gap:2px;">
-        <button onclick="manualAdd('cat')" title="Добавить категорию">+</button>
-        <button onclick="manualDelete('cat')" class="danger" title="Удалить категорию">−</button>
-    </div>
-    <button onclick="saveGlobal()" class="blurple">💾</button>
 </div>
-            </div>
         </div>
         <div class="market-scroll"><div id="grid" class="market-grid"></div></div>
     </div>
 </div>
 
 <div id="cart-trigger" onclick="openCart()"><span>🛒</span><div id="cart-count">0</div></div>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <script>
-    let db = JSON.parse(localStorage.getItem('mc_economy_v18')) || {
-        servers: [{name: "Magic", items: []}],
-        mods: ["Vanilla"],
-        cats: ["Блоки", "Инструменты", "Ресурсы"]
-    };
 
-    let cart = [];
-    let curSrvIdx = 0;
-    let isAdmin = false;
-    let editingIdx = null;
 
-   function init() {
-    // Эта строка принудительно перезапишет название при каждом запуске
-    db.servers[curSrvIdx].name = "Mythic 1.20.1"; 
+
+ // 1. Конфигурация Firebase (ОСТАВЬ ТОЛЬКО ОДИН РАЗ)
+const firebaseConfig = {
+    apiKey: "AIzaSyBJheg1xrRBz6wHXzpV4dxGDFtgPm3gjJQ",
+    authDomain: "ecomyst-d5c0e.firebaseapp.com",
+    databaseURL: "https://ecomyst-d5c0e-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "ecomyst-d5c0e",
+    storageBucket: "ecomyst-d5c0e.firebasestorage.app",
+    messagingSenderId: "745331166808",
+    appId: "1:745331166808:web:1e004fd05c0d9a0301442d",
+    measurementId: "G-GRE63HQSZY"
+};
+
+// Инициализация
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+
+// 2. Глобальные переменные
+let db = { servers: [{name: "Загрузка...", items: []}], mods: [], cats: [] };
+let cart = [];
+let curSrvIdx = 0;
+let isAdmin = false;
+let adminToken = ""; 
+let editingIdx = null;
+
+// 3. Функция инициализации (слушает клавишу L)
+function init() {
+    console.log("Economy Hub Initialized.");
     
-    document.getElementById('curSrvTitle').innerText = db.servers[curSrvIdx].name;
-    updateSelects();
-    updateCartUI();
-    render();
+    // Сразу загружаем данные из Firebase
+    database.ref('shopData').on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+            db = data;
+            // Проверяем наличие серверов, чтобы не было ошибок
+            if(!db.servers) db.servers = [{name: "Mystic 1.20.1", items: []}];
+            if(!db.mods) db.mods = [];
+            if(!db.cats) db.cats = [];
+            
+            updateSelects(); 
+            render();
+        }
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement.tagName)) return;
+        if (e.key.toLowerCase() === 'l' || e.key.toLowerCase() === 'д') { 
+            toggleAdmin(); 
+        }
+    });
 }
 
-    function updateSelects() {
-        const fm = document.getElementById('filterMod'), fc = document.getElementById('filterCat');
-        const em = document.getElementById('ed-mod'), ec = document.getElementById('ed-cat');
-        fm.innerHTML = '<option value="all">Все моды</option>' + db.mods.map(m => `<option value="${m}">${m}</option>`).join('');
-        fc.innerHTML = '<option value="all">Все категории</option>' + db.cats.map(c => `<option value="${c}">${c}</option>`).join('');
-        em.innerHTML = db.mods.map(m => `<option value="${m}">${m}</option>`).join('');
-        ec.innerHTML = db.cats.map(c => `<option value="${c}">${c}</option>`).join('');
-    }
+// 4. Логика админа
+async function toggleAdmin() {
+    if (!isAdmin) {
+        const pass = prompt("Введите пароль администратора:");
+        // Здесь можно добавить проверку: if (pass !== 'твой_пароль') return alert('Стоп!');
+        if (!pass) return;
 
-    function toggleAdmin() {
-        isAdmin = !isAdmin;
-        document.body.className = isAdmin ? 'admin-mode' : 'player-mode';
-        document.getElementById('admBtn').innerText = isAdmin ? 'АДМИН: ВКЛ' : 'АДМИН: ВЫКЛ';
-        document.getElementById('admBtn').style.background = isAdmin ? 'var(--red)' : '#4f545c';
+        adminToken = pass; 
+        isAdmin = true;
+        
+        document.body.classList.add('admin-mode');
+        document.getElementById('admBtn').style.display = 'block';
+        
+        alert("Режим администратора активирован");
+        render();
+    } else {
+        isAdmin = false;
+        adminToken = "";
+        document.body.classList.remove('admin-mode');
+        document.getElementById('admBtn').style.display = 'none';
         render();
     }
+}
 
-    function render() {
-        const grid = document.getElementById('grid');
-        grid.innerHTML = '';
-        const search = document.getElementById('search').value.toLowerCase();
-        const selMod = document.getElementById('filterMod').value;
-        const selCat = document.getElementById('filterCat').value;
-        const sort = document.getElementById('sortPrice').value;
+// ... (далее идут твои функции render, saveGlobal и т.д.)
+
+// В САМОМ КОНЦЕ СКРИПТА ОБЯЗАТЕЛЬНО ВЫЗОВИ:
+init();
+// 5. СОХРАНЕНИЕ В GOOGLE (Вместо старого fetch)
+async function saveGlobal() {
+    // В Firebase мы не можем легко проверить пароль через fetch, 
+    // поэтому просто пробуем записать. Если в Rules настроен пароль — сработает или нет.
+    database.ref('shopData').set(db)
+        .then(() => alert("✅ Успешно сохранено в Google Firebase!"))
+        .catch(err => alert("❌ Ошибка доступа! Проверьте пароль или правила Rules в консоли Firebase."));
+}
+
+// ... ОСТАЛЬНЫЕ ТВОИ ФУНКЦИИ (render, addToCart, openEdit и т.д.) БЕЗ ИЗМЕНЕНИЙ ...
+
+// 4. ОТРИСОВКА ПРЕДМЕТОВ
+// 4. ОТРИСОВКА ПРЕДМЕТОВ
+function render() {
+    if (!db || !db.servers || !db.servers[curSrvIdx]) return; 
+
+    const grid = document.getElementById('grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    
+    const search = document.getElementById('search').value.toLowerCase();
+    const selMod = document.getElementById('filterMod').value;
+    const selCat = document.getElementById('filterCat').value;
+    const sort = document.getElementById('sortPrice').value;
+    
+    // 1. Фильтрация
+    let filtered = db.servers[curSrvIdx].items.filter(it => {
+        const matchesSearch = it.name.toLowerCase().includes(search);
+        const matchesMod = (selMod === 'all' || it.mod === selMod);
+        const matchesCat = (selCat === 'all' || it.cat === selCat);
+        return matchesSearch && matchesMod && matchesCat;
+    });
+
+    // 2. Сортировка
+    if(sort === 'low') filtered.sort((a,b) => a.price - b.price);
+    if(sort === 'high') filtered.sort((a,b) => b.price - a.price);
+
+    // 3. Создание карточек
+    filtered.forEach((it) => {
+        const realIdx = db.servers[curSrvIdx].items.indexOf(it);
+        const card = document.createElement('div');
+        card.className = 'card animate-item';
         
-        let filtered = db.servers[curSrvIdx].items.filter(it => 
-            it.name.toLowerCase().includes(search) && (selMod === 'all' || it.mod === selMod) && (selCat === 'all' || it.cat === selCat)
-        );
+        card.innerHTML = `
+            <div class="admin-view" style="position:absolute; top:10px; right:10px; gap:4px; z-index:10;">
+                <button class="yellow" style="padding:4px 6px" onclick="event.stopPropagation(); openEdit(${realIdx})">✏️</button>
+                <button class="danger" style="padding:4px 6px" onclick="event.stopPropagation(); del(${realIdx})">×</button>
+            </div>
+            
+            <img src="${it.img}" onerror="this.src='https://i.imgur.com/hYfN4D7.png'">
+            
+            <div style="text-align:center; font-weight:700; font-size:16px; margin-bottom: 4px;">${it.name}</div>
+            
+            <div style="text-align:center; font-size:11px; color:var(--text-muted); margin-bottom: 12px;">
+                ${it.mod || 'Vanilla'} • ${it.cat || 'Предметы'}
+            </div>
 
-        if(sort === 'low') filtered.sort((a,b) => a.price - b.price);
-        if(sort === 'high') filtered.sort((a,b) => b.price - a.price);
+            <div class="price-badge">${it.price} $</div>
+        `;
+        
+        card.onclick = isAdmin ? () => openEdit(realIdx) : (e) => addToCart(it, e);
+        grid.appendChild(card);
+    });
+}
 
-        filtered.forEach((it, i) => {
-            const realIdx = db.servers[curSrvIdx].items.indexOf(it);
-            const card = document.createElement('div');
-            card.className = 'card animate-item';
-            card.style.animationDelay = `${i * 0.01}s`;
-            card.innerHTML = `
-                <div class="admin-view" style="position:absolute; top:10px; right:10px; gap:4px; z-index:10;">
-                    <button class="yellow" style="padding:4px 6px" onclick="event.stopPropagation(); openEdit(${realIdx})">✏️</button>
-                    <button class="danger" style="padding:4px 6px" onclick="event.stopPropagation(); del(${realIdx})">×</button>
-                </div>
-                <img src="${it.img}" onerror="this.src='https://i.imgur.com/hYfN4D7.png'">
-                <div style="text-align:center; font-weight:700; font-size:14px;">${it.name}</div>
-                <div style="text-align:center; font-size:10px; color:var(--text-muted);">${it.mod} • ${it.cat}</div>
-                <div class="price-badge">${it.price} $</div>
-            `;
-            card.onclick = isAdmin ? () => openEdit(realIdx) : (e) => addToCart(it, e);
-            grid.appendChild(card);
-        });
+// 5. ФУНКЦИИ КОРЗИНЫ
+function addToCart(item, event) {
+    if(isAdmin) return;
+    let existing = cart.find(c => c.name === item.name && c.img === item.img);
+    if(existing) existing.count++; else cart.push({...item, count: 1});
+    updateCartUI();
+    // Анимация полета в корзину
+    if (event) {
+        const btn = document.getElementById('cart-trigger');
+        const rect = btn.getBoundingClientRect();
+        const flyer = document.createElement('img');
+        flyer.src = item.img; 
+        flyer.style.cssText = `width:50px;height:50px;position:fixed;z-index:10000;transition:all 0.8s ease;left:${event.clientX-25}px;top:${event.clientY-25}px;`;
+        document.body.appendChild(flyer);
+        setTimeout(() => { 
+            flyer.style.left = rect.left + 20 + 'px'; 
+            flyer.style.top = rect.top + 20 + 'px'; 
+            flyer.style.width = '15px'; flyer.style.height = '15px'; flyer.style.opacity = '0.5'; 
+        }, 10);
+        setTimeout(() => { flyer.remove(); }, 800);
     }
+}
 
-    function addToCart(item, event) {
-        if(isAdmin) return;
-        let existing = cart.find(c => c.name === item.name && c.img === item.img);
-        if(existing) existing.count++; else cart.push({...item, count: 1});
-        updateCartUI();
-        if (event) {
-            const btn = document.getElementById('cart-trigger');
-            const rect = btn.getBoundingClientRect();
-            const flyer = document.createElement('img');
-            flyer.src = item.img; flyer.style.cssText = `width:50px;height:50px;position:fixed;z-index:10000;transition:all 0.8s ease;left:${event.clientX-25}px;top:${event.clientY-25}px;`;
-            document.body.appendChild(flyer);
-            setTimeout(() => { flyer.style.left = rect.left + 20 + 'px'; flyer.style.top = rect.top + 20 + 'px'; flyer.style.width = '15px'; flyer.style.height = '15px'; flyer.style.opacity = '0.5'; }, 10);
-            setTimeout(() => { flyer.remove(); btn.style.transform = 'scale(1.2)'; setTimeout(() => btn.style.transform = '', 200); }, 800);
-        }
-    }
+function updateCartUI() {
+    const count = cart.reduce((s, i) => s + i.count, 0);
+    const trigger = document.getElementById('cart-trigger');
+    document.getElementById('cart-count').innerText = count;
+    if (count > 0 && !isAdmin) trigger.classList.add('visible'); else trigger.classList.remove('visible');
+}
 
-    function updateCartUI() {
-        const count = cart.reduce((s, i) => s + i.count, 0);
-        const trigger = document.getElementById('cart-trigger');
-        document.getElementById('cart-count').innerText = count;
-        if (count > 0 && !isAdmin) trigger.classList.add('visible'); else trigger.classList.remove('visible');
-    }
-
-   function openCart() {
+function openCart() {
     const list = document.getElementById('cart-items-list');
     list.innerHTML = '';
     let total = 0;
-    
     cart.forEach((it, idx) => {
         total += it.price * it.count;
         const div = document.createElement('div');
-        div.className = 'cart-item'; // Тот самый класс из стилей выше
+        div.className = 'cart-item';
         div.innerHTML = `
             <img src="${it.img}" style="width:40px; height:40px; image-rendering:pixelated;">
             <div class="cart-item-info">
@@ -510,150 +605,162 @@ input:focus, select:focus {
                 <div style="font-size:11px; color:var(--green)">${it.price} $ / шт.</div>
             </div>
             <div class="cart-item-controls">
-                <button onclick="changeQty(${idx}, -1)" style="padding:2px 8px">-</button>
-                <input type="number" class="cart-qty-input" value="${it.count}" 
-                       onchange="updateQtyManual(${idx}, this.value)">
-                <button onclick="changeQty(${idx}, 1)" style="padding:2px 8px">+</button>
-                <button class="danger" onclick="deleteFromCart(${idx})" style="padding:2px 8px; margin-left:5px">×</button>
-            </div>
-        `;
+                <button onclick="changeQty(${idx}, -1)">-</button>
+                <input type="number" class="cart-qty-input" value="${it.count}" onchange="updateQtyManual(${idx}, this.value)">
+                <button onclick="changeQty(${idx}, 1)">+</button>
+                <button class="danger" onclick="deleteFromCart(${idx})">×</button>
+            </div>`;
         list.appendChild(div);
     });
-    
     document.getElementById('cart-total').innerText = total + ' $';
     document.getElementById('cart-modal').style.display = 'flex';
 }
 
-   // Функция для кнопок + и -
 function changeQty(index, delta) {
     cart[index].count += delta;
-    if (cart[index].count <= 0) {
-        cart.splice(index, 1);
-    }
+    if (cart[index].count <= 0) cart.splice(index, 1);
     finishCartUpdate();
 }
 
-// Функция для ручного ввода числа
 function updateQtyManual(index, value) {
     let val = parseInt(value);
-    if (isNaN(val) || val <= 0) {
-        cart.splice(index, 1);
-    } else {
-        cart[index].count = val;
-    }
+    if (isNaN(val) || val <= 0) cart.splice(index, 1); else cart[index].count = val;
     finishCartUpdate();
 }
 
-// Функция для кнопки "крестик" (удалить полностью)
 function deleteFromCart(index) {
     cart.splice(index, 1);
     finishCartUpdate();
 }
 
-// Вспомогательная функция для обновления интерфейса
 function finishCartUpdate() {
     updateCartUI();
-    if (cart.length > 0) {
-        openCart(); // Перерисовываем список в модалке
-    } else {
-        closeModals(); // Закрываем, если пусто
-    }
+    if (cart.length > 0) openCart(); else closeModals();
 }
-    function clearCart() { cart = []; updateCartUI(); closeModals(); }
 
-    function createCustomItem() {
-        const m = document.getElementById('filterMod').value;
-        const c = document.getElementById('filterCat').value;
-        db.servers[curSrvIdx].items.push({ name: "Новый предмет", img: "https://i.imgur.com/hYfN4D7.png", mod: m === 'all' ? db.mods[0] : m, cat: c === 'all' ? db.cats[0] : c, price: 0 });
-        render(); openEdit(db.servers[curSrvIdx].items.length - 1);
-    }
+function clearCart() { cart = []; updateCartUI(); closeModals(); }
 
-    function openEdit(i) {
-        editingIdx = i; const it = db.servers[curSrvIdx].items[i];
-        document.getElementById('ed-name').value = it.name; document.getElementById('ed-price').value = it.price;
-        document.getElementById('ed-img').value = it.img; document.getElementById('ed-mod').value = it.mod;
-        document.getElementById('ed-cat').value = it.cat; document.getElementById('edit-modal').style.display = 'flex';
-    }
-    
-    function confirmEdit() {
-        const it = db.servers[curSrvIdx].items[editingIdx];
-        it.name = document.getElementById('ed-name').value; it.price = parseFloat(document.getElementById('ed-price').value) || 0;
-        it.img = document.getElementById('ed-img').value; it.mod = document.getElementById('ed-mod').value;
-        it.cat = document.getElementById('ed-cat').value; closeModals(); render();
-    }
-    
-    function del(i) { if(confirm('Удалить?')) { db.servers[curSrvIdx].items.splice(i,1); render(); } }
-    function manualAdd(type) { const v = prompt("Название:"); if(v) { if(type === 'mod') db.mods.push(v); else db.cats.push(v); updateSelects(); } }
+// 6. ФУНКЦИИ РЕДАКТИРОВАНИЯ
+function updateSelects() {
+    const fm = document.getElementById('filterMod'), fc = document.getElementById('filterCat');
+    const em = document.getElementById('ed-mod'), ec = document.getElementById('ed-cat');
+    fm.innerHTML = '<option value="all">Все моды</option>' + db.mods.map(m => `<option value="${m}">${m}</option>`).join('');
+    fc.innerHTML = '<option value="all">Все категории</option>' + db.cats.map(c => `<option value="${c}">${c}</option>`).join('');
+    em.innerHTML = db.mods.map(m => `<option value="${m}">${m}</option>`).join('');
+    ec.innerHTML = db.cats.map(c => `<option value="${c}">${c}</option>`).join('');
+}
 
-    function manualDelete(type) {
-    const isMod = type === 'mod';
-    const list = isMod ? db.mods : db.cats;
-    const typeName = isMod ? "мод" : "категорию";
 
-    // Создаем список названий для подсказки
-    const choice = prompt(`Введите название ${typeName}, который хотите УДАЛИТЬ:\n\nДоступные: ${list.join(', ')}`);
-    
-    if (!choice) return;
 
+function openEdit(i) {
+    editingIdx = i; const it = db.servers[curSrvIdx].items[i];
+    document.getElementById('ed-name').value = it.name;
+    document.getElementById('ed-price').value = it.price;
+    document.getElementById('ed-img').value = it.img;
+    document.getElementById('ed-mod').value = it.mod;
+    document.getElementById('ed-cat').value = it.cat;
+    document.getElementById('edit-modal').style.display = 'flex';
+}
+
+function confirmEdit() {
+    const it = db.servers[curSrvIdx].items[editingIdx];
+    it.name = document.getElementById('ed-name').value;
+    it.price = parseFloat(document.getElementById('ed-price').value) || 0;
+    it.img = document.getElementById('ed-img').value;
+    it.mod = document.getElementById('ed-mod').value;
+    it.cat = document.getElementById('ed-cat').value;
+    closeModals(); render();
+}
+
+function del(i) { if(confirm('Удалить?')) { db.servers[curSrvIdx].items.splice(i,1); render(); } }
+
+function manualAdd(type) { 
+    const v = prompt("Название:"); 
+    if(v) { 
+        if(type === 'mod') db.mods.push(v); else db.cats.push(v); 
+        updateSelects(); 
+    } 
+}
+
+function manualDelete(type) {
+    const list = type === 'mod' ? db.mods : db.cats;
+    const choice = prompt(`Удалить ${type}:\n${list.join(', ')}`);
     const index = list.indexOf(choice);
-    if (index > -1) {
-        if (confirm(`Вы уверены, что хотите удалить ${typeName} "${choice}"? \n(Это не удалит сами предметы, но они могут перестать отображаться в фильтрах)`)) {
-            list.splice(index, 1);
-            updateSelects();
-            render();
-            // Напоминаем сохранить изменения
-            console.log(`${choice} удален. Не забудьте нажать на дискету!`);
-        }
-    } else {
-        alert("Такого названия не найдено в списке.");
-    }
+    if (index > -1) { list.splice(index, 1); updateSelects(); render(); }
 }
 
-    function saveGlobal() { localStorage.setItem('mc_economy_v18', JSON.stringify(db)); alert("Сохранено!"); }
-    function closeModals() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); }
+function closeModals() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); }
 
-    document.getElementById('jarLoader').onchange = async (e) => {
-        const files = e.target.files; if(!files.length) return;
-        const w = document.getElementById('warehouse'); w.innerHTML = '';
-        let total = 0;
-        for (let file of files) {
-            const zip = await JSZip.loadAsync(file);
-            const mName = file.name.replace('.jar', '');
-            if(!db.mods.includes(mName)) { db.mods.push(mName); updateSelects(); }
-            const tex = Object.keys(zip.files).filter(p => p.endsWith('.png') && p.includes('textures/'));
-           for(let p of tex) {
-                const b64 = await zip.file(p).async("base64");
-                const img = `data:image/png;base64,${b64}`;
-                
-                // Извлекаем имя файла без расширения
-                const itemName = p.split('/').pop().replace('.png', '');
-                
-                const div = document.createElement('div');
-                div.className = 'item-node';
-                // Добавляем иконку и span с названием. Title добавит подсказку при наведении.
-                div.innerHTML = `
-                    <img src="${img}">
-                    <span title="${itemName}">${itemName}</span>
-                `;
-                
-                div.onclick = () => {
-                    const selMod = document.getElementById('filterMod').value;
-                    const selCat = document.getElementById('filterCat').value;
-                    db.servers[curSrvIdx].items.push({
-                        name: itemName, 
-                        img: img,
-                        mod: selMod === 'all' ? mName : selMod, 
-                        cat: selCat === 'all' ? 'Блоки' : selCat, 
-                        price: 0
-                    });
-                    render();
-                };
-                w.appendChild(div); total++;
-            }
+function createCustomItem() {
+    db.servers[curSrvIdx].items.push({ 
+        name: "Новый предмет", 
+        img: "https://i.imgur.com/hYfN4D7.png", 
+        mod: db.mods[0], cat: db.cats[0], price: 0 
+    });
+    render(); 
+    openEdit(db.servers[curSrvIdx].items.length - 1);
+}
+
+// 7. ЗАГРУЗКА JAR
+// 7. ЗАГРУЗКА JAR
+document.getElementById('jarLoader').onchange = async (e) => {
+    const files = e.target.files; 
+    if(!files.length) return;
+    
+    const w = document.getElementById('warehouse'); 
+    w.innerHTML = ''; 
+    let total = 0;
+
+    for (let file of files) {
+        const zip = await JSZip.loadAsync(file);
+        const mName = file.name.replace('.jar', '');
+        
+        if(!db.mods.includes(mName)) { 
+            db.mods.push(mName); 
+            updateSelects(); 
         }
-        document.getElementById('loadedCount').innerText = `(${total})`;
-    };
-    init();
+
+        const tex = Object.keys(zip.files).filter(p => p.endsWith('.png') && p.includes('textures/'));
+        
+        for(let p of tex) {
+            const b64 = await zip.file(p).async("base64");
+            const img = `data:image/png;base64,${b64}`;
+            const itemName = p.split('/').pop().replace('.png', '');
+            
+            const div = document.createElement('div');
+            div.className = 'item-node';
+            div.innerHTML = `<img src="${img}"><span title="${itemName}">${itemName}</span>`;
+            
+            // ВОТ ТУТ ОБНОВЛЕННЫЙ КЛИК
+            div.onclick = function() {
+                // Эффект подмигивания
+                this.classList.remove('added-flash');
+                void this.offsetWidth; 
+                this.classList.add('added-flash');
+
+                // Логика добавления с учетом фильтров
+                const selMod = document.getElementById('filterMod').value;
+                const selCat = document.getElementById('filterCat').value;
+
+                db.servers[curSrvIdx].items.push({ 
+                    name: itemName, 
+                    img: img, 
+                    mod: (selMod === 'all' ? mName : selMod), 
+                    cat: (selCat === 'all' ? "Блоки" : selCat), 
+                    price: parseFloat(document.getElementById('default-price')?.value || 0)
+                });
+
+                render();
+            };
+            w.appendChild(div); 
+            total++;
+        }
+    }
+    document.getElementById('loadedCount').innerText = `(${total})`;
+};
+
+
+
 </script>
 </body>
 </html>
