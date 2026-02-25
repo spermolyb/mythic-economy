@@ -496,26 +496,19 @@ async function toggleAdmin() {
 // В САМОМ КОНЦЕ СКРИПТА ОБЯЗАТЕЛЬНО ВЫЗОВИ:
 init();
 // 5. СОХРАНЕНИЕ В GOOGLE (Вместо старого fetch)
-async function saveGlobal() {
-    if (!isAdmin || !adminToken) {
-        alert("❌ Вы не авторизованы как админ!");
-        return;
-    }
+// В начале скрипта добавим переменную для сверки
+let adminToken = ""; 
 
-    // Мы используем встроенный метод Firebase SDK
-    // Если в Rules настроена проверка, то без верного adminToken запись не пройдет
+async function saveGlobal() {
+    if (!isAdmin) return alert("Вы не в режиме админа!");
+
+    // Пытаемся сохранить данные в ветку shopData
+    // Мы передаем объект целиком. Firebase проверит права доступа.
     database.ref('shopData').set(db)
-        .then(() => {
-            alert("✅ Успешно сохранено в облаке Firebase!");
-        })
+        .then(() => alert("✅ Данные успешно синхронизированы с облаком!"))
         .catch(err => {
             console.error(err);
-            alert("❌ Ошибка доступа! Скорее всего, пароль неверный или правила Rules настроены не на тот ключ.");
-            // Если ошибка доступа, сбрасываем админку
-            isAdmin = false;
-            adminToken = "";
-            document.body.classList.remove('admin-mode');
-            render();
+            alert("❌ Ошибка доступа! Проверьте правила (Rules) в Firebase или пароль.");
         });
 }
 
@@ -779,4 +772,5 @@ document.getElementById('jarLoader').onchange = async (e) => {
 </script>
 </body>
 </html>
+
 
