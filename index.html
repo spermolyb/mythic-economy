@@ -21,7 +21,6 @@
             --border: rgba(255,255,255,0.05);
         }
 
-        /* Восстановление шрифтов и базовых стилей */
         * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; }
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; background: var(--bg-dark); color: var(--text-full); overflow: hidden; }
 
@@ -30,7 +29,6 @@
         ::-webkit-scrollbar-thumb { background: #3e4046; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--green); }
 
-        /* Восстановление анимаций появления */
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-item { animation: fadeIn 0.3s ease-out forwards; }
 
@@ -85,7 +83,7 @@
         }
 
         .main { flex: 1; display: flex; flex-direction: column; background: var(--bg-main); }
-       /* Базовая навигация */
+
         .nav { 
             height: 75px; 
             background: var(--bg-sidebar); 
@@ -105,7 +103,6 @@
             z-index: 5;
         }
 
-        /* Центровка поиска с защитой от перекрытия */
         .nav-center { 
             position: absolute; 
             left: 50%; 
@@ -123,7 +120,6 @@
             z-index: 5;
         }
 
-        /* Общие стили полей */
         input, select { 
             background: var(--bg-dark); 
             color: #fff; 
@@ -136,7 +132,6 @@
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* Жесткий размер для списков модов/категорий */
         select {
             width: 140px !important;
             max-width: 140px !important;
@@ -146,7 +141,6 @@
             -webkit-appearance: menulist !important;
         }
 
-        /* Поиск: расширение работает корректно */
         input#search {
             width: 160px;
             min-width: 160px;
@@ -163,30 +157,27 @@
             box-shadow: 0 0 10px var(--green-glow);
         }
 
-        /* МОБИЛЬНАЯ АДАПТАЦИЯ (Исправляет исчезновение поиска) */
-   /* --- УЛУЧШЕННАЯ МОБИЛЬНАЯ ВЕРСИЯ --- */
 @media (max-width: 950px) {
     .nav {
         height: auto;
-        padding: 20px 15px; /* Увеличили внутренние отступы всей шапки */
+        padding: 20px 15px; 
         flex-direction: column;
-        gap: 15px; /* Расстояние между рядами */
+        gap: 15px; 
         justify-content: center;
     }
 
-    /* Название сервера (Mystic 1.20.1) */
     .nav-left span:first-child {
         display: block;
         width: 100%;
         text-align: center;
-        margin-bottom: 10px; /* Отталкиваем название от фильтра модов */
+        margin-bottom: 10px; 
         font-size: 18px;
     }
 
     .nav-left {
         width: 100%;
         justify-content: center;
-        flex-wrap: wrap; /* Позволяет селектам переноситься, если экран очень узкий */
+        flex-wrap: wrap; 
         gap: 10px;
     }
 
@@ -194,14 +185,14 @@
         position: static;
         transform: none;
         width: 100%;
-        order: 3; /* Поиск теперь будет в самом низу шапки для удобства */
+        order: 3;
     }
 
     .nav-right {
         width: 100%;
         justify-content: center;
         margin: 0;
-        order: 4; /* Кнопки админа под поиском */
+        order: 4; 
     }
 
     input#search {
@@ -210,7 +201,6 @@
     }
 
     select {
-        /* На мобилках делаем селекты чуть шире, чтобы текст не обрезался сильно */
         width: calc(50% - 10px) !important;
         min-width: 140px !important; 
     }
@@ -224,7 +214,6 @@
 
 body.admin-mode .admin-view { display: flex !important; }
 
-/* Карточка с переносом текста */
 .card-name {
     text-align: center; 
     font-weight: 700; 
@@ -247,13 +236,11 @@ body.admin-mode .admin-view { display: flex !important; }
         }
         input#search:focus { width: 450px; text-align: left; }
 
-        /* Найди это место в CSS и замени/добавь */
-/* Обновленные стили для компактности */
 .nav-left {
     display: flex;
     align-items: center;
     gap: 8px;
-    flex: 0 1 auto; /* Не дает блоку вытеснять поиск */
+    flex: 0 1 auto; 
 }
 
 input, select { 
@@ -265,13 +252,9 @@ input, select {
     outline: none; 
     height: 36px;
     font-size: 13px;
-    
-    /* ЖЕСТКИЕ ГРАНИЦЫ */
     width: 140px; 
     max-width: 140px; 
     min-width: 140px;
-    
-    /* Чтобы текст внутри самой кнопки не вылезал */
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -279,7 +262,6 @@ input, select {
     cursor: pointer;
 }
 
-/* Фикс для мобильных устройств, чтобы не ломало сетку */
 @media (max-width: 768px) {
     input, select {
         width: 100%;
@@ -288,27 +270,23 @@ input, select {
     }
 }
 
-/* Подсветка при клике, как была раньше */
 input:focus, select:focus {
     border-color: var(--green);
     box-shadow: 0 0 10px var(--green-glow);
 }
 
-/* Убираем наш кастомный фон-стрелочку, пусть будет системная */
 select {
     appearance: auto !important; 
     -webkit-appearance: menulist !important;
 }
 
-/* Поиск теперь в приоритете */
 input#search {
-    width: 160px; /* Изначальная ширина */
-    min-width: 160px; /* Чтобы не схлопнулся совсем */
-    max-width: 450px; /* Предел расширения */
+    width: 160px; 
+    min-width: 160px;  
+    max-width: 450px; 
     cursor: text;
 }
 
-/* Эффект расширения при нажатии на поиск */
 input#search:focus { 
     width: 350px; 
     border-color: var(--green);
@@ -317,18 +295,18 @@ input#search:focus {
 
 @media (max-width: 600px) {
     input#search:focus {
-        width: 100%; /* На весь экран смартфона */
+        width: 100%; 
     }
 }
 
-
         }
-        input:focus, select:focus { border-color: var(--green); box-shadow: 0 0 10px var(--green-glow); }
+        input:focus, select:focus { border-color: var(--green); box-shadow: 0 0 10px var(--green-glow); 
+                                  }
 
-        .market-scroll { flex: 1; overflow-y: scroll; padding: 25px; }
-        .market-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
-
-        /* Эффекты карточек */
+        .market-scroll { flex: 1; overflow-y: scroll; padding: 25px; 
+                       }
+        .market-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; 
+                     }
         .card { 
             background: var(--bg-card); border-radius: 15px; padding: 18px; position: relative; 
             border: 1px solid var(--border); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -341,51 +319,64 @@ input#search:focus {
             background: #36393f;
             z-index: 5;
         }
-        .card img { width: 50px; height: 50px; display: block; margin: 0 auto 12px; image-rendering: pixelated; transition: 0.3s; }
-        .card:hover img { transform: scale(1.2); }
-
+        .card img { width: 50px; height: 50px; display: block; margin: 0 auto 12px; image-rendering: pixelated; transition: 0.3s; 
+                  }
+        .card:hover img { transform: scale(1.2); 
+                        }
         .price-badge { 
             text-align: center; margin-top: 12px; background: var(--bg-dark); padding: 8px; 
             border-radius: 8px; font-size: 14px; font-weight: bold; color: var(--green); 
             border: 1px solid transparent; transition: 0.3s; 
         }
-        .card:hover .price-badge { border-color: var(--green); box-shadow: 0 0 10px var(--green-glow); color: #fff; background: rgba(46, 204, 113, 0.2); }
-
-        /* Корзина и модалки */
+        .card:hover .price-badge { border-color: var(--green); box-shadow: 0 0 10px var(--green-glow); color: #fff; background: rgba(46, 204, 113, 0.2); 
+                                 }
         #cart-trigger {
             position: fixed; bottom: 30px; right: 30px; width: 65px; height: 65px; background: var(--green);
             border-radius: 50%; display: flex; align-items: center; justify-content: center;
             cursor: pointer; box-shadow: 0 10px 30px var(--green-glow); z-index: 999; 
             transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); opacity: 0; visibility: hidden; transform: translateY(100px) scale(0.5);
         }
-        #cart-trigger.visible { opacity: 1; visibility: visible; transform: translateY(0) scale(1); }
-        #cart-count { position: absolute; top: -5px; right: -5px; background: var(--red); color: white; border-radius: 50%; width: 22px; height: 22px; font-size: 12px; display: flex; align-items: center; justify-content: center; font-weight: bold; }
-
-        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; z-index: 10001; }
-        .modal-box { background: var(--bg-sidebar); padding: 30px; border-radius: 20px; width: 420px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 15px; }
-
-        .admin-view { display: none !important; }
-        body.admin-mode .admin-view { display: flex !important; }
-
+        #cart-trigger.visible { opacity: 1; visibility: visible; transform: translateY(0) scale(1); 
+                              }
+        #cart-count { position: absolute; top: -5px; right: -5px; background: var(--red); color: white; border-radius: 50%; width: 22px; height: 22px; font-size: 12px; display: flex; align-items: center; justify-content: center; font-weight: bold; 
+                    }
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; z-index: 10001; 
+               }
+        .modal-box { background: var(--bg-sidebar); padding: 30px; border-radius: 20px; width: 420px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 15px; 
+                   }
+        .admin-view { display: none !important; 
+                    }
+        body.admin-mode .admin-view { display: flex !important; 
+                                    }
         @keyframes pulse-green {
-            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.7); }
-            50% { transform: scale(1.1); box-shadow: 0 0 15px 5px rgba(46, 204, 113, 0.4); border-color: var(--green); }
-            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); }
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.7); 
+               }
+            50% { transform: scale(1.1); box-shadow: 0 0 15px 5px rgba(46, 204, 113, 0.4); border-color: var(--green); 
+                }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); 
+                 }
         }
-        .added-flash { animation: pulse-green 0.4s ease-out; }
+        .added-flash { animation: pulse-green 0.4s ease-out; 
+                     }
+        button { padding: 8px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; background: var(--green); color: #000; transition: 0.2s; 
+               }
+        button:hover { filter: brightness(1.1); transform: scale(1.02); 
+                     }
+        button.danger { background: var(--red); color: #fff; 
+                      }
+        button.yellow { background: var(--yellow); color: #000; 
+                      }
+        button.blurple { background: var(--blurple); color: #fff; 
+                       }
 
-        button { padding: 8px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; background: var(--green); color: #000; transition: 0.2s; }
-        button:hover { filter: brightness(1.1); transform: scale(1.02); }
-        button.danger { background: var(--red); color: #fff; }
-        button.yellow { background: var(--yellow); color: #000; }
-        button.blurple { background: var(--blurple); color: #fff; }
-
-        .cart-item { display: flex; align-items: center; gap: 12px; background: var(--bg-dark); padding: 10px; border-radius: 10px; margin-bottom: 8px; }
-        .cart-qty-input { width: 45px !important; text-align: center; background: var(--bg-main) !important; border: 1px solid var(--green) !important; color: #fff; }
+        .cart-item { display: flex; align-items: center; gap: 12px; background: var(--bg-dark); padding: 10px; border-radius: 10px; margin-bottom: 8px; 
+                   }
+        .cart-qty-input { width: 45px !important; text-align: center; background: var(--bg-main) !important; border: 1px solid var(--green) !important; color: #fff; 
+                        }
     </style>
 </head>
+    
 <body class="player-mode">
-
 <div id="edit-modal" class="modal">
     <div class="modal-box">
         <h2 style="margin:0 0 10px 0; color:var(--green)">Редактор</h2>
@@ -510,7 +501,7 @@ function init() {
 function toggleAdmin() {
     if (!isAdmin) {
         const pass = prompt("Введите пароль администратора:");
-        if (!pass) return; // Если нажал "Отмена"
+        if (!pass) return; 
 
         database.ref('shopData/adminPass').once('value').then((snap) => {
             if (pass === String(snap.val())) {
@@ -581,7 +572,6 @@ function addToCart(item, event) {
     if(existing) existing.count++; else cart.push({...item, count: 1});
     updateCartUI();
     
-    // Восстановление "летучей" анимации
     if (event) {
         const trigger = document.getElementById('cart-trigger');
         const rect = trigger.getBoundingClientRect();
@@ -642,7 +632,6 @@ function openCart() {
     document.getElementById('cart-modal').style.display = 'flex';
 }
 
-// Также обнови функцию изменения количества, чтобы она корректно работала с кнопками:
 function updateQtyManual(idx, val) {
     const newVal = parseInt(val);
     if (newVal <= 0) {
@@ -677,13 +666,11 @@ function updateSelects() {
     const currentMod = fm.value;
     const currentCat = fc.value;
 
-    // Функция для обрезки длинных имен (например, больше 18 символов)
     const truncate = (str, len = 18) => str.length > len ? str.substring(0, len) + '...' : str;
 
     const mods = db.mods || [];
     const cats = db.cats || [];
 
-    // ВНИМАНИЕ: в value кладем полный текст ${m}, а в текст опции — обрезанный truncate(m)
     const modOpts = mods.map(m => `<option value="${m}" title="${m}">${truncate(m)}</option>`).join('');
     const catOpts = cats.map(c => `<option value="${c}" title="${c}">${truncate(c)}</option>`).join('');
 
@@ -719,12 +706,9 @@ function confirmEdit() {
 function del(i) { if(confirm('Удалить?')) { db.servers[curSrvIdx].items.splice(i,1); render(); } }
 
 function saveGlobal() {
-    // Спрашиваем пароль ПРЯМО перед отправкой
     const pass = prompt("Подтвердите пароль администратора для записи:");
     if (!pass) return;
 
-    // Создаем копию данных для отправки и добавляем в неё временное поле lastPass
-    // Это поле проверит сервер Firebase и сравнит с тем, что в базе
     const dataToSend = {
         ...db,
         lastPass: pass
@@ -762,7 +746,7 @@ document.getElementById('jarLoader').onchange = async (e) => {
             const div = document.createElement('div');
             div.className = 'item-node';
             div.innerHTML = `<img src="${img}"><span>${name}</span>`;
-           // Внутри jarLoader.onchange, в функции div.onclick:
+
 div.onclick = function() {
     this.classList.add('added-flash');
     setTimeout(() => this.classList.remove('added-flash'), 400);
@@ -770,15 +754,12 @@ div.onclick = function() {
     const sMod = document.getElementById('filterMod').value;
     const sCat = document.getElementById('filterCat').value;
 
-    // Если выбрано "Все...", принудительно ставим Vanilla/Разное
     const finalMod = (sMod === 'all') ? "Vanilla" : sMod;
     const finalCat = (sCat === 'all') ? "Разное" : sCat;
 
-    // Добавляем в базу, если таких имен еще нет
     if (!db.mods.includes(finalMod)) db.mods.push(finalMod);
     if (!db.cats.includes(finalCat)) db.cats.push(finalCat);
     
-    // Обновляем селекты (теперь они не сбросятся)
     updateSelects();
 
     db.servers[curSrvIdx].items.push({ 
@@ -837,19 +818,15 @@ function delCat() {
 }
 
     function downloadBackup() {
-    // Создаем копию базы без паролей и лишних полей
     const backupData = JSON.stringify(db, null, 4);
     
-    // Создаем "виртуальный" файл
     const blob = new Blob([backupData], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     
-    // Создаем временную ссылку для скачивания
     const a = document.createElement('a');
     a.href = url;
     a.download = `mystic_backup_${new Date().toLocaleDateString()}.json`;
     
-    // Симулируем клик и удаляем ссылку
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -861,6 +838,7 @@ function delCat() {
 </script>
 </body>
 </html>
+
 
 
 
